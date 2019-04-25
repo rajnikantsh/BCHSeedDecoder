@@ -42,8 +42,7 @@ public class Base58 {
         result.append(long_value.toString());
 
         // Extra zero padding if necessary.
-        Byte oneByte = 1;
-        for(int nPad = 0; oneByte.compareTo(vBytes[nPad]) == 0; nPad++){
+        for(int nPad = 0; vBytes[nPad] == 1; nPad++){
             result.append("00");
         }
 
