@@ -1,22 +1,13 @@
-import java.io.*;
-
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
-import java.security.KeyFactory;
-import java.security.Security;
-import java.security.MessageDigest;
 
 
 public class ECUtils {
@@ -24,8 +15,7 @@ public class ECUtils {
     private static final String EC_GEN_PARAM_SPEC = "secp256k1";
     private static final String KEY_PAIR_GEN_ALGORITHM = "ECDSA";
 
-    public static String get_pubkey_from_secret(byte[] secret) {
-
+    public static String get_pubkey_from_secret(byte[] secret) throws NoSuchAlgorithmException, InvalidKeySpecException{
         // This function is to get the public key from private key, mostly for XPUB.
 
         // Bouncy Castle used to provide Crypto Libraries
@@ -40,25 +30,10 @@ public class ECUtils {
 
         KeySpec publicKeySpec = new ECPublicKeySpec(ecPoint, ecParameterSpec);
 
-        PublicKey publicKey = null;
-        KeyFactory keyFactory = null;
-        try {
-            keyFactory = KeyFactory.getInstance(KEY_PAIR_GEN_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("NO SUCH ALGORITHM EXCEPTION");
-            System.exit(0);
-        }
-        try {
-            publicKey = keyFactory.generatePublic(publicKeySpec);
-
-            // privateKey = keyFactory.generatePublic(publicKeySpec);
-        } catch (InvalidKeySpecException e) {
-            System.out.println("INVALID KEY SPEC EXCEPTION");
-            System.exit(0);
-        }
+        KeyFactory keyFactory = KeyFactory.getInstance(KEY_PAIR_GEN_ALGORITHM);
 
         // Native java library does not provide good format, so use Bouncy Castle class:
-        ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+        ECPublicKey ecPublicKey = (ECPublicKey) keyFactory.generatePublic(publicKeySpec);;
 
         // Extract and return Hex Value:
         String pubKeyHexFormat = getHexPubKeyfromECkeys(ecPublicKey, true);
@@ -66,8 +41,7 @@ public class ECUtils {
         return pubKeyHexFormat;
     }
 
-    public static String[] _CKD_pub(String cK, String c, String s)  {
-
+    public static String[] _CKD_pub(String cK, String c, String s)  throws InvalidKeySpecException,InvalidKeyException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
         ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(EC_GEN_PARAM_SPEC);
 
@@ -81,26 +55,12 @@ public class ECUtils {
 
         ECPoint ecPoint = ecParameterSpec.getG().multiply(bi_I32).add(ecParameterSpec.getCurve().decodePoint(cK_bytes));
         KeySpec publicKeySpec = new ECPublicKeySpec(ecPoint, ecParameterSpec);
-        PublicKey publicKey = null;
-        KeyFactory keyFactory = null;
-        try {
-            keyFactory = KeyFactory.getInstance(KEY_PAIR_GEN_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("NO SUCH ALGORITHM EXCEPTION");
-            System.exit(0);
-        }
-        try {
-            publicKey = keyFactory.generatePublic(publicKeySpec);
-        } catch (InvalidKeySpecException e) {
-            System.out.println("INVALID KEY SPEC EXCEPTION");
-            System.exit(0);
-        }
-        org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey) publicKey;
+        KeyFactory keyFactory = KeyFactory.getInstance(KEY_PAIR_GEN_ALGORITHM);
+
+        ECPublicKey ecPublicKey = (ECPublicKey) keyFactory.generatePublic(publicKeySpec);
         String pubKeyHexFormat = ECUtils.getHexPubKeyfromECkeys(ecPublicKey, true);
 
-        String retval[] = new String[2];
-        retval[0] = pubKeyHexFormat;
-        retval[1] = I_hex.substring(64);
+        String retval[] = {pubKeyHexFormat , I_hex.substring(64)};
         return retval;
 
     }

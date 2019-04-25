@@ -1,6 +1,7 @@
 
 import java.io.*;
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,14 +24,13 @@ public class Main {
                     String seed = String.join(" ", myseed);
                     System.out.println("We're on seed word " + (x + 1) + " iteration " + y);
 
-                    byte[] bip32root = MasterKeys.get_seed_from_mnemonic(seed);
+                    byte[] bip32root = Util.get_seed_from_mnemonic(seed);
                     byte[] root512 = Util.hmac_sha_512_bytes(bip32root, "Bitcoin seed".getBytes());
                     byte[] kBytes = Arrays.copyOfRange(root512, 0, 32);
                     byte[] cBytes = Arrays.copyOfRange(root512, 32, 64);
                     String publicKey = ECUtils.get_pubkey_from_secret(kBytes);
                     String serializedXpub = serializeXpub(cBytes, publicKey);
                     String finalXpub = Base58.base_encode_58(serializedXpub);
-
                     String deserialized_xpub[] = Util.deserialize_xkey(finalXpub, false);
                     String my_c = deserialized_xpub[4];
                     String my_cK = deserialized_xpub[5];
@@ -46,8 +46,11 @@ public class Main {
                             System.out.println("seed found --> "+seed);
                             System.exit(0);
                         }
+
                     }
-                }catch (Exception e){}
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -73,12 +76,12 @@ public class Main {
         }
     }
 
-    public static String legacyAddrfromPubKeyHash(String pubKeyHash) {
+    public static String legacyAddrfromPubKeyHash(String pubKeyHash) throws NoSuchAlgorithmException {
 
         BigInteger bi_58 = new BigInteger("58");
-        String b58chars = Util.BASE_58_CHARS;
 
-        StringBuffer addr = new StringBuffer("00").append(pubKeyHash);
+        StringBuffer addr = new StringBuffer("00");
+        addr.append(pubKeyHash);
         String checksum = Util.Hash(addr.toString());
         String checksumhead = (checksum.substring(0, 8));
         addr.append(checksumhead);
@@ -90,19 +93,17 @@ public class Main {
             BigInteger[] divMod = int_payload.divideAndRemainder(bi_58);
             BigInteger div = divMod[0];
             BigInteger mod = divMod[1];
-            mychar = b58chars.substring(mod.intValue(), mod.intValue() + 1);
+            mychar = Util.BASE_58_CHARS.substring(mod.intValue(), mod.intValue() + 1);
             result.append(mychar);
             int_payload = div;
         }
 
-        mychar = b58chars.substring(int_payload.intValue(), int_payload.intValue() + 1);
-
-        result.append(mychar).append("1");
+        result.append(Util.BASE_58_CHARS.substring(int_payload.intValue(), int_payload.intValue() + 1)).append("1");
         return result.reverse().toString();
 
     }
 
     private static String serializeXpub(byte[] c, String Ck){
-        return "0488B21E000000000000000000" + new BigInteger(1, c).toString(16) + Ck;
+        return "0488B21E000000000000000000" + Util.bytesToHex(c) + Ck;
     }
 }

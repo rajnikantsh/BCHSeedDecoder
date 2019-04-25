@@ -11,49 +11,40 @@ public class Util {
     public static final String BASE_58_CHARS = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     private static final String ZERO = "0000000000000000000000000000000000000000000000000000000000000000";
 
-    public static String Hash(String x) {
+    public static String normalizeText(String mytext) {
+
+        String[] words = mytext.split("\\W+");
+        String delimiter = " ";
+        return String.join(delimiter, words).toLowerCase();
+    }
+
+    public static byte[] get_seed_from_mnemonic(final String mnemonic) {
+
+        // Gets a byte array of the bip32 root "seed"
+        // from the electrum mnemonic phrase.
+        String salt = "electrum";
+        int iterations = 2048;
+        byte[] saltBytes = salt.getBytes();
+        byte[] mnemonicBytes = normalizeText(mnemonic).getBytes();
+        byte[] seedBytes = PBKDF2.hmac("SHA512", mnemonicBytes, saltBytes, iterations);
+        return seedBytes;
+
+    }
+
+    public static String Hash(String x) throws NoSuchAlgorithmException{
 
         byte[] xBytes = new BigInteger(x , 16).toByteArray();
         return new BigInteger(1,doubleHash(xBytes)).toString(16);
     }
 
-    public static String format(BigInteger coord, int size) {
-        String hex = coord.toString(16);
-        int length = hex.length();
-        int appendLength = size - length;
-        return ZERO.substring(0,appendLength)+hex;
-    }
-
-
-    public static byte[] doubleHash(byte[] b) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            b = digest.digest(b);
-            return digest.digest(b);
-        }catch (NoSuchAlgorithmException exception){
-            exception.printStackTrace();
-        }
-        return new byte[0];
-    }
-
-    public static String padLeftHexString(String s, int expectedLength) {
-
-        String retval = s;
-        StringBuffer zeroString = new StringBuffer();
-        int myLength = s.length();
-        if (expectedLength > myLength) {
-            int numberOfZeroes = expectedLength - myLength;
-            for (int i = 0; i < numberOfZeroes; i++) {
-                zeroString.append("0");
-            }
-            retval = zeroString.toString() + retval;
-        }
-        return retval;
+    public static byte[] doubleHash(byte[] b) throws NoSuchAlgorithmException{
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        b = digest.digest(b);
+        return digest.digest(b);
     }
 
     public static int unsignedToBytes(byte a) {
-        int b = a & 0xFF;
-        return b;
+        return a & 0xFF;
     }
 
     public static String[] deserialize_xkey(String key, boolean prv) {
@@ -63,14 +54,13 @@ public class Util {
         String child_number = xkey.substring(18, 26);
         String c = xkey.substring(26, 90);
 
-        if (!prv) {
-            if ((!xkey.substring(0, 8).equals("0488B21E")) && (!xkey.substring(0, 8).equals("0488b21e"))) {
+        if (prv) {
+            if ((!xkey.substring(0, 8).equals("0488ADE4")) && (!xkey.substring(0, 8).equals("0488ade4"))) {
                 System.out.println("BAD KEY HEADER FAILURE.");
             }
         }
-
-        if (prv) {
-            if ((!xkey.substring(0, 8).equals("0488ADE4")) && (!xkey.substring(0, 8).equals("0488ade4"))) {
+        else {
+            if ((!xkey.substring(0, 8).equals("0488B21E")) && (!xkey.substring(0, 8).equals("0488b21e"))) {
                 System.out.println("BAD KEY HEADER FAILURE.");
             }
         }
@@ -81,33 +71,22 @@ public class Util {
 
     }
 
-    public static String ripeHash(String x) {
+    public static String ripeHash(String x) throws NoSuchAlgorithmException{
 
         // This method will peform a RIPEMD160 Hash of the SHA256 Hash.
-        String out = null;
-        MessageDigest digest = null;
-        MessageDigest digest2 = null;
-        byte[] xBytes = null;
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        MessageDigest digest2 = MessageDigest.getInstance("RIPEMD160");
 
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-            digest2 = MessageDigest.getInstance("RIPEMD160");
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("NO SUCH ALGORITHM EXCEPTION");
-            System.exit(0);
-        }
-
-        xBytes = Util.hexStringToByteArray(x);
+        byte[] xBytes = Util.hexStringToByteArray(x);
         // --- Hash sha256
         xBytes = digest.digest(xBytes);
         // ripemd160
         xBytes = digest2.digest(xBytes);
-        out = Util.bytesToHex(xBytes);
-        return out;
+        return Util.bytesToHex(xBytes);
     }
 
     public static String bytesToHex(byte[] bytes) {
-        final char[] hexArray = "0123456789abcdef".toCharArray();
+        final char[] hexArray = HEX_STRING.toCharArray();
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;
@@ -126,21 +105,9 @@ public class Util {
         return data;
     }
 
-    public static byte[] hmac_sha_512_bytes_from_hex(byte[] message, String hexkey) {
-        try {
-            byte[] byteKey = Util.hexStringToByteArray(hexkey);
-            return hmac_sha_512_bytes(message, byteKey);
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } finally {
-            // We're done!
-        }
-
-        return new byte[0];
+    public static byte[] hmac_sha_512_bytes_from_hex(byte[] message, String hexkey) throws InvalidKeyException,NoSuchAlgorithmException {
+       byte[] byteKey = Util.hexStringToByteArray(hexkey);
+       return hmac_sha_512_bytes(message, byteKey);
     }
 
     public static byte[] hmac_sha_512_bytes(byte[] message, byte[] key) throws InvalidKeyException,NoSuchAlgorithmException{
@@ -152,6 +119,5 @@ public class Util {
         sha512_HMAC.init(keySpec);
         byte [] mac_data = sha512_HMAC.doFinal(message);
         return mac_data;
-
     }
 }
