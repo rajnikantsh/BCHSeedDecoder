@@ -1,4 +1,4 @@
-// This file is licensed under GNU Affero General Public License v3.0
+package org.bch.keydecoder;// This file is licensed under GNU Affero General Public License v3.0
 // SOURCE: https://github.com/pinae/ctSESAM-android/blob/master/app/src/main/java/de/pinyto/ctSESAM/PBKDF2.java
 
 import java.nio.ByteBuffer;

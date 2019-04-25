@@ -1,3 +1,5 @@
+package org.bch.keydecoder;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
@@ -103,11 +105,6 @@ public class Util {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
-    }
-
-    public static byte[] hmac_sha_512_bytes_from_hex(byte[] message, String hexkey) throws InvalidKeyException,NoSuchAlgorithmException {
-       byte[] byteKey = Util.hexStringToByteArray(hexkey);
-       return hmac_sha_512_bytes(message, byteKey);
     }
 
     public static byte[] hmac_sha_512_bytes(byte[] message, byte[] key) throws InvalidKeyException,NoSuchAlgorithmException{
