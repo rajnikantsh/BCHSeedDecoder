@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
@@ -34,7 +35,6 @@ public class ECUtils {
         byte[] cK_bytes = new BigInteger(cK, 16).toByteArray();
 
         String pubKeyHexFormat = getHexString(bi_I32, cK_bytes);
-
         return new KeysHolder(pubKeyHexFormat , I_hex.substring(64));
     }
 

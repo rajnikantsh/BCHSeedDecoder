@@ -13,15 +13,15 @@ import java.util.List;
 public class Main {
 
 
-    private static List<String> words = new ArrayList<>();
 
-    public static void main(String[] args) throws Exception{
+
+    public static void main(String[] args) {
 
         // Bouncy Castle used to provide Crypto Libraries
         Security.addProvider(new BouncyCastleProvider());
 
         String clue="1EtzTPhtQTvXbkBivtbeBgovft3zETBWUo";
-        fileReader();
+        List<String> words = fileReader();
         String[] myseed = {"constant", "forest", "adore", "false", "green", "weave", "stop", "guy", "fur", "freeze", "giggle", "clock"};
 
         for(int x =0; x < 12; x++) {
@@ -39,11 +39,9 @@ public class Main {
                     String publicKey = ECUtils.get_pubkey_from_secret(kBytes);
                     String serializedXpub = serializeXpub(cBytes, publicKey);
                     String finalXpub = Base58.base_encode_58(serializedXpub);
-                    String deserialized_xpub[] = Util.deserialize_xkey(finalXpub, false);
-                    String my_c = deserialized_xpub[4];
-                    String my_cK = deserialized_xpub[5];
+                    String[] deserialized_xpub = Util.deserialize_xkey(finalXpub, false);
 
-                    KeysHolder newKeys = ECUtils._CKD_pub(my_cK, my_c, "00000000");
+                    KeysHolder newKeys = ECUtils._CKD_pub(deserialized_xpub[5], deserialized_xpub[4], "00000000");
 
                     for (int i = 0; i < 5; i++) {
                         KeysHolder keys  = ECUtils._CKD_pub(newKeys.getPublicKey(), newKeys.getPrivateKey(), "0000000" + i);
@@ -61,8 +59,9 @@ public class Main {
         }
     }
 
-    private static void fileReader()
+    private static List<String> fileReader()
     {
+        List<String> words = new ArrayList<>();
         String wordListFileName = "wordlist/english.txt";
         String line = null;
         try {
@@ -80,13 +79,14 @@ public class Main {
         catch(IOException ex) {
             System.out.println("Error reading file '" + wordListFileName + "'");
         }
+        return words;
     }
 
     public static String legacyAddrfromPubKeyHash(String pubKeyHash) throws NoSuchAlgorithmException {
 
         BigInteger bi_58 = new BigInteger("58");
 
-        StringBuffer addr = new StringBuffer("00");
+        StringBuilder addr = new StringBuilder("00");
         addr.append(pubKeyHash);
         String checksum = Util.Hash(addr.toString());
         String checksumhead = checksum.substring(0, 8);

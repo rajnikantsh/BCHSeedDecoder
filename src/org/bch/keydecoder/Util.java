@@ -1,11 +1,19 @@
 package org.bch.keydecoder;
 
+import org.bouncycastle.jcajce.provider.symmetric.PBEPBKDF2;
+
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
 public class Util {
 
@@ -20,16 +28,18 @@ public class Util {
         return String.join(delimiter, words).toLowerCase();
     }
 
-    public static byte[] get_seed_from_mnemonic(final String mnemonic) {
+    public static byte[] get_seed_from_mnemonic(final String mnemonic) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
 
         // Gets a byte array of the bip32 root "seed"
         // from the electrum mnemonic phrase.
         String salt = "electrum";
         int iterations = 2048;
         byte[] saltBytes = salt.getBytes();
-        byte[] mnemonicBytes = normalizeText(mnemonic).getBytes();
-        byte[] seedBytes = PBKDF2.hmac("SHA512", mnemonicBytes, saltBytes, iterations);
-        return seedBytes;
+        char[] mnemonicChars = normalizeText(mnemonic).toCharArray();
+        SecretKeyFactory factoryBC = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512", "BC");
+        KeySpec  keyspecBC = new PBEKeySpec(mnemonicChars, saltBytes, iterations, 512);
+        SecretKey keyBC = factoryBC.generateSecret(keyspecBC);
+        return keyBC.getEncoded();
 
     }
 
